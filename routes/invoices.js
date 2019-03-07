@@ -9,12 +9,12 @@ const ExpressError = require("../expressError");
 router.get('', async function(req, res, next){
     try {
         const results = await db.query(
-            `SELECT id, comp_code FROM invoices`);
+`SELECT id, comp_code FROM invoices`);
         return res.json({invoices: results.rows});
     } catch(err) {
         return next(err);
     }
-})
+});
 
 /* GET object on given invoice => 
 {invoice: {id, amt, paid, add_date, paid_date, company: {code, name, description}} */
@@ -28,13 +28,13 @@ router.get('/:id', async function(req, res, next){
             WHERE id = $1`, [req.params.id]
         );
         
-        const {id, amt, paid, add_date, paid_date, code, name, description} = result.rows[0];
+        const { code, name, description, ...invoiceDeets } = result.rows[0];
 
-        return res.json({id, amt, paid, add_date, paid_date, company: {code, name, description}});
+        return res.json({ ...invoiceDeets, company: {code, name, description} });
 
     } catch(err){
         err = new ExpressError("Invoice ID could not be found", 404);
-        next(err);
+        return next(err);
     }
 });
 
@@ -57,7 +57,7 @@ router.post('', async function(req, res, next){
         if (err.status !== 400){
             err = new ExpressError("Company code cannot be found", 404);
         }
-        next(err);
+        return next(err);
     }
 });
 
@@ -75,7 +75,7 @@ router.put('/:id', async function(req, res, next){
              WHERE id=$2
              RETURNING id, comp_code, amt, paid, add_date, paid_date`,
             [req.body.amt, req.params.id] 
-        )
+        );
 
         if (result.rowCount === 0){
             throw new ExpressError("Invoice cannot be found", 404);
@@ -84,8 +84,27 @@ router.put('/:id', async function(req, res, next){
         return res.json(result.rows[0]);
 
     } catch(err) {
-        next(err);
+        return next(err);
     }
-})
+});
+
+/* DELETE deletes an invoice at id => {status: "deleted"}*/
+router.delete('/:id', async function (req, res, next){
+    try {
+
+        const result = await db.query(
+            `DELETE FROM invoices WHERE id = $1`,
+            [req.params.id]);
+
+        if (result.rowCount === 0){
+            throw new ExpressError("Invoice could not be found", 404)
+        }
+
+        return res.json({status: "deleted"});
+
+    } catch(err) {
+        return next(err);
+    }
+});
 
 module.exports = router

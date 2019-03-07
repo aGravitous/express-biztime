@@ -9,11 +9,10 @@ const ExpressError = require("../expressError");
 
 router.get('', async (req, res, next) => {
     try {
-      const results = await db.query(
-          `SELECT code, name FROM companies`);
+      const results = await db.query(`SELECT code, name FROM companies`);
       return res.json({companies: results.rows});
-    } catch(err){
-      return next(err)
+    } catch(err) {
+      return next(err);
     }
   });
 
@@ -22,15 +21,25 @@ router.get('', async (req, res, next) => {
 router.get('/:code', async (req, res, next) => {
     try {
         const code = req.params.code;
-        const results = await db.query(
-            `SELECT code, name, description FROM companies
-            WHERE code=$1`, [code]);
-        if (results.rowCount === 0){
+        const compResults = await db.query(
+            `SELECT code, name, description 
+             FROM companies
+             WHERE code=$1`, [code]);
+        
+        if (compResults.rowCount === 0){
           throw new ExpressError("Company cannot be found", 404);
         }
-        return res.json({company: results.rows[0]});
-    } catch(err){
-        return next(err)
+
+        const invResults = await db.query(
+          `SELECT id FROM invoices WHERE comp_code = $1`,
+          [code]);
+
+        const company = compResults.rows[0];
+        company.invoices = invResults.rows;
+
+        return res.json({company});
+    } catch(err) {
+        return next(err);
     }
 });
 
@@ -38,7 +47,7 @@ router.get('/:code', async (req, res, next) => {
 router.post('', async (req, res, next) => {
 	try {
 		
-		const {code, name, description} = req.body;
+		const { code, name, description } = req.body;
 		
 		const result = await db.query(
 			`INSERT INTO companies (code, name, description)
@@ -57,7 +66,7 @@ router.post('', async (req, res, next) => {
 /** PATCH update a company / => {code, name, description} */
 router.patch('/:code', async (req, res, next) => {
 	try {
-		const {name, description} = req.body;
+		const { name, description } = req.body;
 
 		const result = await db.query(
 			`UPDATE companies SET name=$1, description=$2
@@ -69,23 +78,23 @@ router.patch('/:code', async (req, res, next) => {
 			throw new ExpressError("Company cannot be found", 404);
 		}
 
-		return res.json(result.rows[0])
+		return res.json(result.rows[0]);
 
 	} catch(err) {
 		if (err.status !== 404){
 			err = new ExpressError("Company name already exists", 409);
 		}
-		return next(err)
+		return next(err);
 	}
 })
 
 /* DELETE a company / => {status: "deleted"} */
 router.delete('/:code', async (req, res, next) => {
     try {
-        const request = await db.query(
+        const result = await db.query(
             `DELETE FROM companies WHERE code = $1`,
             [req.params.code]);
-        if (request.rowCount === 0){
+        if (result.rowCount === 0){
             throw new ExpressError("Company could not be found", 404)
         }
         return res.json({status: "deleted"});
