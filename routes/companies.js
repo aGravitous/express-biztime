@@ -17,16 +17,44 @@ router.get('', async (req, res, next) => {
     }
   });
 
-module.exports = router;
 
+/** GET specific company by code / => {code, name, description} */
 router.get('/:code', async (req, res, next) => {
     try {
-        const code = req.params.code
+        const code = req.params.code;
         const results = await db.query(
             `SELECT code, name, description FROM companies
             WHERE code=$1`, [code]);
+        if (results.rows.length === 0){
+          throw new ExpressError("Company cannot be found", 404);
+        }
         return res.json({company: results.rows[0]});
     } catch(err){
         return next(err)
     }
 });
+
+/** POST create a company / => {code, name, description} */
+router.post('', async (req, res, next) => {
+	try {
+		
+		const {code, name, description} = req.body;
+		
+		const result = await db.query(
+			`INSERT INTO companies (code, name, description)
+			 VALUES ($1, $2, $3)
+			 RETURNING code, name, description`, [code, name, description]
+		);
+
+		return res.status(201).json(result.rows[0]);
+
+	} catch(err) {
+		let niceError = new ExpressError("Company name or code already exists or is missing", 409)
+		return next(niceError);
+	}
+});
+
+
+
+
+module.exports = router;
