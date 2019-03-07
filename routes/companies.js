@@ -49,11 +49,35 @@ router.post('', async (req, res, next) => {
 		return res.status(201).json(result.rows[0]);
 
 	} catch(err) {
-		let niceError = new ExpressError("Company name or code already exists or is missing", 409)
+		let niceError = new ExpressError("Company name or code already exists/is missing", 409)
 		return next(niceError);
 	}
 });
 
+/** PATCH update a company / => {code, name, description} */
+router.patch('/:code', async (req, res, next) => {
+	try {
+		const {name, description} = req.body;
+
+		const result = await db.query(
+			`UPDATE companies SET name=$1, description=$2
+			 WHERE code=$3
+			 RETURNING code, name, description`, [name, description, req.params.code]
+		);
+
+		if (result.rows.length === 0){
+			throw new ExpressError("Company cannot be found", 404);
+		}
+
+		return res.json(result.rows[0])
+
+	} catch(err) {
+		if (err.status !== 404){
+			err = new ExpressError("Company name already exists", 409);
+		}
+		return next(err)
+	}
+})
 
 
 
