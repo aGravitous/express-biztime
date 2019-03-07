@@ -1,4 +1,4 @@
-// Routes relating to cmpanies
+// Routes relating to companies
 
 const express = require("express");
 const db = require("../db");
