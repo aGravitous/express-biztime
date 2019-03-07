@@ -25,7 +25,7 @@ router.get('/:code', async (req, res, next) => {
         const results = await db.query(
             `SELECT code, name, description FROM companies
             WHERE code=$1`, [code]);
-        if (results.rows.length === 0){
+        if (results.rowCount === 0){
           throw new ExpressError("Company cannot be found", 404);
         }
         return res.json({company: results.rows[0]});
@@ -79,6 +79,19 @@ router.patch('/:code', async (req, res, next) => {
 	}
 })
 
-
+/* DELETE a company / => {status: "deleted"} */
+router.delete('/:code', async (req, res, next) => {
+    try {
+        const request = await db.query(
+            `DELETE FROM companies WHERE code = $1`,
+            [req.params.code]);
+        if (request.rowCount === 0){
+            throw new ExpressError("Company could not be found", 404)
+        }
+        return res.json({status: "deleted"});
+    } catch(err) {
+		return next(err);
+    }
+});
 
 module.exports = router;
