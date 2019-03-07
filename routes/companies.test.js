@@ -19,7 +19,7 @@ beforeEach(async function(){
         `INSERT INTO invoices (comp_code, amt)
          VALUES ('Test1', 50)
          RETURNING id, comp_code, amt, paid, add_date, paid_date`);
-    invoices = invResult.rows[0];
+    invoice = invResult.rows[0];
 });
 
 afterEach(async function(){
@@ -30,3 +30,15 @@ afterEach(async function(){
 afterAll( async function(){
     await db.end();
 });
+
+
+/* GET a list of companies / => [{code, name}, ...] */
+describe("GET /companies", async function() {
+    test("Gets a list of 1 company", async function() {
+      const response = await request(app).get(`/companies`);
+      const { companies } = response.body;
+      expect(response.statusCode).toEqual(200);
+      expect(companies).toHaveLength(1);
+      expect(companies[0]).toEqual({code: company.code, name: company.name});
+    });
+  });
