@@ -55,9 +55,37 @@ router.post('', async function(req, res, next){
 
     } catch(err) {
         if (err.status !== 400){
-            err = new ExpressError("Company code not found in system", 404);
+            err = new ExpressError("Company code cannot be found", 404);
         }
         next(err);
     }
 });
+
+/* PUT update an invoice {comp_code, amt} => 
+{invoice: {id, comp_code, amt, paid, add_date, paid_date}} */
+router.put('/:id', async function(req, res, next){
+    try {
+
+        if (+req.body.amt <= 0){
+            throw new ExpressError("Amount must be a postive number", 400);
+        }
+
+        const result = await db.query(
+            `UPDATE invoices set amt=$1
+             WHERE id=$2
+             RETURNING id, comp_code, amt, paid, add_date, paid_date`,
+            [req.body.amt, req.params.id] 
+        )
+
+        if (result.rowCount === 0){
+            throw new ExpressError("Invoice cannot be found", 404);
+        }
+        
+        return res.json(result.rows[0]);
+
+    } catch(err) {
+        next(err);
+    }
+})
+
 module.exports = router

@@ -65,7 +65,7 @@ router.patch('/:code', async (req, res, next) => {
 			 RETURNING code, name, description`, [name, description, req.params.code]
 		);
 
-		if (result.rows.length === 0){
+		if (result.rowCount === 0){
 			throw new ExpressError("Company cannot be found", 404);
 		}
 
