@@ -73,7 +73,7 @@ describe("POST /companies", async function () {
                 code: "Test2",
                 name: "Test2",
                 description: "Test2"
-            })
+            });
 
         expect(response.statusCode).toEqual(201);
         expect(response.body).toEqual({ code: "Test2", name: "Test2", description: "Test2" });
@@ -86,7 +86,48 @@ describe("POST /companies", async function () {
                 code: "Test1",
                 name: "Test1",
                 description: "Test2"
-            })
+            });
         expect(response.statusCode).toEqual(409);
-    })
+    });
+});
+
+/* PATCH to update a single company / => {code, name, description}  */
+describe("Patch 1 company", async function () {
+    test("Update 1 company", async function () {
+        const response = await request(app)
+            .patch(`/companies/Test1`)
+            .send({
+                name: "Test2",
+                description: "Test2"
+            });
+        expect(response.statusCode).toEqual(200);
+        expect(response.body).toEqual({ code: "Test1", name: "Test2", description: "Test2" });
+    });
+    
+    test("responds with 404 if can't find company", async function () {
+        const response = await request(app).get(`/companies/Test10000`);
+
+        expect(response.statusCode).toEqual(404);
+    });
+
+
+    test("response with 409 if company name is taken", async function () {
+    
+    await request(app)
+        .post(`/companies`)
+        .send({
+            code: "Test2",
+            name: "Test2",
+            description: "Test2"
+        });
+
+    const response = await request(app)
+        .patch(`/companies/Test1`)
+        .send({
+            name: "Test2",
+            description: "Test2"
+        });
+
+    expect(response.statusCode).toEqual(409);
+    });
 });
