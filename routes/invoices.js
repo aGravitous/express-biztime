@@ -30,7 +30,7 @@ router.get('/:id', async function(req, res, next){
         
         const { code, name, description, ...invoiceDeets } = result.rows[0];
 
-        return res.json({ ...invoiceDeets, company: {code, name, description} });
+        return res.json({ invoice:{ ...invoiceDeets, company: {code, name, description} }});
 
     } catch(err){
         err = new ExpressError("Invoice ID could not be found", 404);
@@ -43,7 +43,7 @@ router.get('/:id', async function(req, res, next){
 router.post('', async function(req, res, next){
     try {
         if (+req.body.amt <= 0){
-            throw new ExpressError("Amount must be a postive number", 400);
+            throw new ExpressError("Amount must be a positive number", 400);
         }
         const result = await db.query(
             `INSERT INTO invoices (comp_code, amt)
@@ -51,7 +51,7 @@ router.post('', async function(req, res, next){
              RETURNING id, comp_code, amt, paid, add_date, paid_date`,
             [req.body.comp_code, req.body.amt]
         );
-        return res.status(201).json(result.rows[0]);
+        return res.status(201).json({invoice:result.rows[0]});
 
     } catch(err) {
         if (err.status !== 400){
@@ -81,7 +81,7 @@ router.put('/:id', async function(req, res, next){
             throw new ExpressError("Invoice cannot be found", 404);
         }
         
-        return res.json(result.rows[0]);
+        return res.json({invoice:result.rows[0]});
 
     } catch(err) {
         return next(err);

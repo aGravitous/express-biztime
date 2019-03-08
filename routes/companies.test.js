@@ -3,7 +3,6 @@ process.env.NODE_ENV = "test";
 const app = require("../app");
 const db = require("../db");
 const request = require("supertest");
-const ExpressError = require("../expressError");
 
 let company;
 let invoice;
@@ -129,5 +128,26 @@ describe("Patch 1 company", async function () {
         });
 
     expect(response.statusCode).toEqual(409);
+    });
+
+    /* DELETE a single company / => {status: "deleted"} */
+    describe("DELETE /companies/:code", async function () {
+        test("Deletes 1 company", async function () {
+            const response = await request(app).delete(`/companies/Test1`);
+
+            expect(response.statusCode).toEqual(200);
+            expect(response.body).toEqual({status: "deleted"});
+
+            const getResponse = await request(app).get(`/companies`);
+            const { companies } = getResponse.body;
+            expect(getResponse.statusCode).toEqual(200);
+            expect(companies).toHaveLength(0);
+        });
+
+        test("responds with 404 if can't find company", async function () {
+            const response = await request(app).delete(`/companies/10000`);
+
+            expect(response.statusCode).toEqual(404);
+        });
     });
 });
